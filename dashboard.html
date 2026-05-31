@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ניהול לידים — הלוואה מהירה לכל מטרה</title>
+<link rel="icon" href="favicon.png" type="image/png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #06231d;
+  --ink-2: #0b3328;
+  --emerald: #0e5c47;
+  --paper: #eef1ed;
+  --white: #ffffff;
+  --orange: #ff6a13;
+  --gold: #f6b916;
+  --text: #0a1f1a;
+  --muted: #66736e;
+  --line: #e2e6e0;
+  --shadow: 0 18px 44px -24px rgba(4,30,22,0.4);
+
+  --pending-bg: #fff1e6; --pending-fg: #c2410c; --pending-dot: #f97316;
+  --progress-bg: #e7f0fd; --progress-fg: #1d4ed8; --progress-dot: #3b82f6;
+  --done-bg: #e6f6ed; --done-fg: #15803d; --done-dot: #22c55e;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Assistant', system-ui, sans-serif; background: var(--paper); color: var(--text); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font-family: inherit; }
+
+/* ---------- login gate ---------- */
+.gate {
+  position: fixed; inset: 0; z-index: 100;
+  background:
+    radial-gradient(900px 500px at 80% -10%, rgba(246,185,22,0.14), transparent 60%),
+    linear-gradient(165deg, var(--ink-2), var(--ink));
+  display: grid; place-items: center; padding: 22px;
+}
+.gate-card {
+  width: 100%; max-width: 400px; background: var(--white); border-radius: 22px;
+  padding: 40px 34px; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); text-align: center;
+}
+.gate-mark {
+  display: inline-grid; place-items: center; margin: 0 auto 18px;
+  background: #fff; border-radius: 14px; padding: 9px 14px;
+  box-shadow: 0 10px 26px -14px rgba(0,0,0,0.4); border: 1px solid var(--line);
+}
+.gate-card h1 { font-size: 26px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+.gate-card p { font-size: 15px; color: var(--muted); margin-bottom: 24px; }
+.gate-card input {
+  width: 100%; font-size: 18px; padding: 14px 16px; border: 2px solid var(--line);
+  border-radius: 12px; background: #fbfbf9; text-align: center; margin-bottom: 14px; transition: border-color .15s;
+}
+.gate-card input:focus { outline: none; border-color: var(--emerald); }
+.gate-card button {
+  width: 100%; background: var(--orange); color: #fff; font-weight: 800; font-size: 18px;
+  padding: 15px; border: none; border-radius: 12px; cursor: pointer; transition: transform .15s;
+}
+.gate-card button:hover { transform: translateY(-2px); }
+.gate-err { color: #dc2626; font-size: 14px; font-weight: 600; min-height: 20px; margin-bottom: 8px; }
+.gate-hint { font-size: 12.5px; color: #9aa6a1; margin-top: 16px; }
+
+/* ---------- app ---------- */
+.app { display: none; min-height: 100vh; }
+.app.show { display: block; }
+.topbar { background: var(--ink); color: #fff; position: sticky; top: 0; z-index: 50; }
+.topbar-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.tb-brand { display: flex; align-items: center; gap: 11px; }
+.tb-logo { display: block; background: #fff; border-radius: 10px; padding: 6px 10px; flex: none; }
+.tb-logo img { height: 34px; width: auto; display: block; }
+.tb-title { font-weight: 800; font-size: 19px; line-height: 1; }
+.tb-sub { font-size: 12.5px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.tb-actions { display: flex; align-items: center; gap: 10px; }
+.tb-link { font-size: 14px; color: rgba(255,255,255,0.7); font-weight: 600; padding: 9px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.16); text-decoration: none; }
+.tb-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.tb-logout { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.16); font-size: 14px; font-weight: 600; padding: 9px 14px; border-radius: 9px; cursor: pointer; }
+.tb-logout:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+.main { max-width: 1280px; margin: 0 auto; padding: 30px 24px 60px; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
+.stat { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: 0 4px 16px -14px rgba(4,30,22,0.4); }
+.stat .v { font-size: 32px; font-weight: 800; line-height: 1; color: var(--ink); }
+.stat .l { font-size: 14px; color: var(--muted); font-weight: 600; margin-top: 6px; display: flex; align-items: center; gap: 7px; }
+.stat .l .d { width: 9px; height: 9px; border-radius: 50%; }
+
+/* toolbar */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-btn { background: var(--white); border: 1.5px solid var(--line); color: var(--muted); font-weight: 700; font-size: 14.5px; padding: 9px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+.filter-btn:hover { border-color: var(--emerald); color: var(--ink); }
+.filter-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.filter-btn .count { opacity: 0.7; font-weight: 700; }
+.search { position: relative; }
+.search input { border: 1.5px solid var(--line); border-radius: 999px; padding: 10px 18px 10px 40px; font-size: 15px; background: var(--white); min-width: 230px; }
+.search input:focus { outline: none; border-color: var(--emerald); }
+.search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: #9aa6a1; }
+
+/* table */
+.table-card { background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { background: #f7f8f5; text-align: right; font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 14px 18px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tbody td { padding: 16px 18px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 15px; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background .12s; }
+tbody tr:hover { background: #fafbf8; }
+.cell-id { font-family: ui-monospace, monospace; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.cell-date { color: var(--muted); font-size: 13.5px; white-space: nowrap; }
+.cell-name { font-weight: 700; font-size: 16px; color: var(--ink); }
+.cell-phone a { direction: ltr; display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--emerald); font-variant-numeric: tabular-nums; text-decoration: none; }
+.cell-phone a:hover { text-decoration: underline; }
+.cell-phone svg { width: 15px; height: 15px; }
+
+/* status select */
+.status-wrap { position: relative; display: inline-flex; }
+.status-select {
+  appearance: none; border: 1.5px solid transparent; border-radius: 999px;
+  font-weight: 800; font-size: 14px; padding: 8px 32px 8px 14px; cursor: pointer;
+  background-repeat: no-repeat; background-position: left 12px center;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+}
+.status-select.pending { background-color: var(--pending-bg); color: var(--pending-fg); }
+.status-select.progress { background-color: var(--progress-bg); color: var(--progress-fg); }
+.status-select.done { background-color: var(--done-bg); color: var(--done-fg); }
+
+.notes-area {
+  width: 100%; min-width: 200px; min-height: 44px; resize: vertical;
+  border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 11px; font-size: 14px;
+  background: #fbfbf9; color: var(--text); line-height: 1.4; transition: border-color .15s;
+}
+.notes-area:focus { outline: none; border-color: var(--emerald); background: #fff; }
+.notes-saved { font-size: 12px; color: var(--done-fg); font-weight: 700; margin-top: 5px; height: 16px; opacity: 0; transition: opacity .2s; }
+.notes-saved.show { opacity: 1; }
+.row-del { background: none; border: none; color: #c0c8c3; cursor: pointer; padding: 6px; border-radius: 8px; transition: all .15s; }
+.row-del:hover { background: #fdecec; color: #dc2626; }
+.row-del svg { width: 17px; height: 17px; display: block; }
+
+.empty { text-align: center; padding: 70px 20px; color: var(--muted); }
+.empty .ic { width: 64px; height: 64px; border-radius: 50%; background: #f0f2ee; display: grid; place-items: center; margin: 0 auto 16px; color: #b6bfb9; }
+.empty .ic svg { width: 30px; height: 30px; }
+.empty h3 { font-size: 20px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+.empty p { font-size: 15px; }
+.empty .seed { margin-top: 18px; background: var(--emerald); color: #fff; border: none; font-weight: 700; font-size: 15px; padding: 11px 20px; border-radius: 10px; cursor: pointer; }
+
+@media (max-width: 760px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .table-card { overflow-x: auto; }
+  table { min-width: 820px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN GATE ============ -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-mark"><img src="logo.png" alt="הלוואה מהירה לכל מטרה" style="height:42px;width:auto;display:block;" /></div>
+    <h1>ניהול לידים</h1>
+    <p>מערכת מאובטחת — נא להזין סיסמה</p>
+    <form id="gateForm">
+      <div class="gate-err" id="gateErr"></div>
+      <input id="gatePass" type="password" placeholder="סיסמה" autocomplete="current-password" />
+      <button type="submit">כניסה למערכת</button>
+    </form>
+    <div class="gate-hint">סיסמת הדגמה: <strong>berale2025</strong></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="tb-brand">
+        <span class="tb-logo"><img src="logo.png" alt="הלוואה מהירה לכל מטרה" /></span>
+        <div>
+          <div class="tb-title">ניהול לידים</div>
+          <div class="tb-sub">לוח בקרה לנציגים</div>
+        </div>
+      </div>
+      <div class="tb-actions">
+        <a class="tb-link" href="index.html">← לדף הנחיתה</a>
+        <button class="tb-logout" id="logoutBtn">יציאה</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <div class="filters" id="filters"></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="חיפוש שם או טלפון..." />
+      </div>
+    </div>
+
+    <div class="table-card" id="tableCard"></div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var STORE_KEY = 'pivo_leads_v1';
+  var AUTH_KEY = 'pivo_admin_auth';
+  var PASSWORD = 'berale2025';
+
+  var STATUS = {
+    pending:  { label: 'ממתין',  cls: 'pending',  dot: 'var(--pending-dot)',  fg: 'var(--pending-fg)' },
+    progress: { label: 'בטיפול', cls: 'progress', dot: 'var(--progress-dot)', fg: 'var(--progress-fg)' },
+    done:     { label: 'טופל',   cls: 'done',     dot: 'var(--done-dot)',     fg: 'var(--done-fg)' }
+  };
+
+  var state = { filter: 'all', search: '' };
+
+  // ---------- storage ----------
+  function loadLeads() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function saveLeads(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
+  function updateLead(id, patch) {
+    var leads = loadLeads();
+    var i = leads.findIndex(function (l) { return l.id === id; });
+    if (i > -1) { Object.assign(leads[i], patch); saveLeads(leads); }
+  }
+  function deleteLead(id) { saveLeads(loadLeads().filter(function (l) { return l.id !== id; })); }
+
+  // ---------- helpers ----------
+  function fmtDate(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '—';
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() +
+      ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+  function seedDemo() {
+    var now = Date.now();
+    var demo = [
+      { id: 'L' + (now - 600000),  createdAt: new Date(now - 600000).toISOString(),  name: 'דנה כהן',     phone: '052-7788123', status: 'pending',  notes: '' },
+      { id: 'L' + (now - 3600000), createdAt: new Date(now - 3600000).toISOString(), name: 'משה לוי',      phone: '054-3321987', status: 'progress', notes: 'ביקש הלוואה של 8,000 ₪, לחזור אחרי 16:00.' },
+      { id: 'L' + (now - 9000000), createdAt: new Date(now - 9000000).toISOString(), name: 'יוסי אברהם',   phone: '050-9912345', status: 'done',     notes: 'אושר, החזר ב-3 צ׳קים. נסגר.' },
+      { id: 'L' + (now - 200000),  createdAt: new Date(now - 200000).toISOString(),  name: 'רונית מזרחי',  phone: '053-4567890', status: 'pending',  notes: '' }
+    ];
+    saveLeads(demo);
+  }
+
+  // ---------- render ----------
+  function render() {
+    var leads = loadLeads();
+    renderStats(leads);
+    renderFilters(leads);
+
+    var filtered = leads.filter(function (l) {
+      if (state.filter !== 'all' && l.status !== state.filter) return false;
+      if (state.search) {
+        var q = state.search.toLowerCase();
+        return (l.name || '').toLowerCase().indexOf(q) > -1 ||
+               (l.phone || '').replace(/\D/g, '').indexOf(q.replace(/\D/g, '')) > -1 && q.replace(/\D/g,'').length > 0;
+      }
+      return true;
+    });
+
+    var card = document.getElementById('tableCard');
+    if (leads.length === 0) {
+      card.innerHTML = emptyState(true);
+      var seed = card.querySelector('.seed');
+      if (seed) seed.addEventListener('click', function () { seedDemo(); render(); });
+      return;
+    }
+    if (filtered.length === 0) { card.innerHTML = emptyState(false); return; }
+
+    var rows = filtered.map(rowHtml).join('');
+    card.innerHTML =
+      '<table><thead><tr>' +
+        '<th>מזהה</th><th>תאריך ושעה</th><th>שם הלקוח</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    bindRows(card);
+  }
+
+  function rowHtml(l) {
+    var st = STATUS[l.status] || STATUS.pending;
+    var phoneDigits = (l.phone || '').replace(/[^\d+]/g, '');
+    return '<tr data-id="' + l.id + '">' +
+      '<td class="cell-id">' + esc(l.id.replace('L', '#')) + '</td>' +
+      '<td class="cell-date">' + fmtDate(l.createdAt) + '</td>' +
+      '<td class="cell-name">' + esc(l.name) + '</td>' +
+      '<td class="cell-phone"><a href="tel:' + esc(phoneDigits) + '">' +
+        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>' +
+        esc(l.phone) + '</a></td>' +
+      '<td><div class="status-wrap"><select class="status-select ' + st.cls + '" data-role="status">' +
+        Object.keys(STATUS).map(function (k) {
+          return '<option value="' + k + '"' + (k === l.status ? ' selected' : '') + '>' + STATUS[k].label + '</option>';
+        }).join('') +
+      '</select></div></td>' +
+      '<td><textarea class="notes-area" data-role="notes" placeholder="הוספת הערות, לוגים או תנאים שסוכמו...">' + esc(l.notes) + '</textarea>' +
+        '<div class="notes-saved" data-role="saved">נשמר ✓</div></td>' +
+      '<td><button class="row-del" data-role="del" title="מחיקה">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>' +
+      '</button></td>' +
+    '</tr>';
+  }
+
+  function bindRows(card) {
+    card.querySelectorAll('tr[data-id]').forEach(function (tr) {
+      var id = tr.getAttribute('data-id');
+      var sel = tr.querySelector('[data-role="status"]');
+      sel.addEventListener('change', function () {
+        sel.className = 'status-select ' + (STATUS[sel.value] || STATUS.pending).cls;
+        updateLead(id, { status: sel.value });
+        renderStats(loadLeads());
+        renderFilters(loadLeads());
+        if (state.filter !== 'all' && sel.value !== state.filter) {
+          tr.style.transition = 'opacity .3s'; tr.style.opacity = '0';
+          setTimeout(render, 300);
+        }
+      });
+
+      var ta = tr.querySelector('[data-role="notes"]');
+      var saved = tr.querySelector('[data-role="saved"]');
+      var t;
+      ta.addEventListener('input', function () {
+        clearTimeout(t);
+        t = setTimeout(function () {
+          updateLead(id, { notes: ta.value });
+          saved.classList.add('show');
+          setTimeout(function () { saved.classList.remove('show'); }, 1400);
+        }, 500);
+      });
+
+      tr.querySelector('[data-role="del"]').addEventListener('click', function () {
+        if (confirm('למחוק את הליד של ' + (tr.querySelector('.cell-name').textContent) + '?')) {
+          deleteLead(id); render();
+        }
+      });
+    });
+  }
+
+  function renderStats(leads) {
+    var counts = { pending: 0, progress: 0, done: 0 };
+    leads.forEach(function (l) { if (counts[l.status] != null) counts[l.status]++; });
+    var html =
+      stat(leads.length, 'סה״כ לידים', null) +
+      stat(counts.pending, STATUS.pending.label, STATUS.pending.dot) +
+      stat(counts.progress, STATUS.progress.label, STATUS.progress.dot) +
+      stat(counts.done, STATUS.done.label, STATUS.done.dot);
+    document.getElementById('stats').innerHTML = html;
+  }
+  function stat(v, l, dot) {
+    var d = dot ? '<span class="d" style="background:' + dot + '"></span>' : '';
+    return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + d + l + '</div></div>';
+  }
+
+  function renderFilters(leads) {
+    var counts = { all: leads.length, pending: 0, progress: 0, done: 0 };
+    leads.forEach(function (l) { if (counts[l.status] != null) counts[l.status]++; });
+    var defs = [
+      { k: 'all', label: 'הכל' },
+      { k: 'pending', label: STATUS.pending.label },
+      { k: 'progress', label: STATUS.progress.label },
+      { k: 'done', label: STATUS.done.label }
+    ];
+    document.getElementById('filters').innerHTML = defs.map(function (d) {
+      return '<button class="filter-btn ' + (state.filter === d.k ? 'active' : '') + '" data-filter="' + d.k + '">' +
+        d.label + ' <span class="count">' + counts[d.k] + '</span></button>';
+    }).join('');
+    document.querySelectorAll('[data-filter]').forEach(function (b) {
+      b.addEventListener('click', function () { state.filter = b.getAttribute('data-filter'); render(); });
+    });
+  }
+
+  function emptyState(noLeads) {
+    if (noLeads) {
+      return '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
+        '<h3>אין עדיין לידים</h3><p>לידים שיישלחו מטופס דף הנחיתה יופיעו כאן באופן מיידי.</p>' +
+        '<button class="seed">טען נתוני הדגמה</button></div>';
+    }
+    return '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>' +
+      '<h3>לא נמצאו תוצאות</h3><p>נסו לשנות את הסינון או החיפוש.</p></div>';
+  }
+
+  // ---------- search ----------
+  document.getElementById('searchInput').addEventListener('input', function (e) {
+    state.search = e.target.value.trim(); render();
+  });
+
+  // live sync if a lead is submitted in another tab
+  window.addEventListener('storage', function (e) { if (e.key === STORE_KEY) render(); });
+
+  // ---------- auth ----------
+  var gate = document.getElementById('gate');
+  var app = document.getElementById('app');
+  function showApp() { gate.style.display = 'none'; app.classList.add('show'); render(); }
+
+  if (sessionStorage.getItem(AUTH_KEY) === '1') { showApp(); }
+
+  document.getElementById('gateForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pass = document.getElementById('gatePass').value;
+    if (pass === PASSWORD) {
+      sessionStorage.setItem(AUTH_KEY, '1');
+      showApp();
+    } else {
+      document.getElementById('gateErr').textContent = 'סיסמה שגויה, נסו שוב.';
+      document.getElementById('gatePass').value = '';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    sessionStorage.removeItem(AUTH_KEY);
+    app.classList.remove('show');
+    gate.style.display = 'grid';
+    document.getElementById('gatePass').value = '';
+    document.getElementById('gateErr').textContent = '';
+  });
+})();
+</script>
+
+</body>
+</html>

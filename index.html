@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>הלוואה מהירה לכל מטרה — זידאן</title>
+<link rel="icon" href="favicon.png" type="image/png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #06231d;
+  --ink-2: #0b3328;
+  --emerald: #0e5c47;
+  --emerald-deep: #07382c;
+  --paper: #f6f4ec;
+  --white: #ffffff;
+  --orange: #ff6a13;
+  --orange-deep: #e85800;
+  --wa: #25d366;
+  --wa-deep: #1da851;
+  --gold: #f6b916;
+  --text: #0a1f1a;
+  --muted: #5c6b66;
+  --line: rgba(8, 40, 32, 0.12);
+  --shadow-lg: 0 30px 70px -28px rgba(4, 30, 22, 0.55);
+  --shadow-md: 0 16px 40px -22px rgba(4, 30, 22, 0.45);
+  --maxw: 1160px;
+  --r: 20px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Assistant', -apple-system, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--paper);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 22px; }
+
+/* ---------- placeholder graphic ---------- */
+.ph {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 14px, rgba(255,255,255,0) 14px 28px),
+    linear-gradient(160deg, #0f6b52, #07382c);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.78);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-align: center; overflow: hidden;
+}
+.ph span { background: rgba(0,0,0,0.28); padding: 7px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(6, 35, 29, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 66px; }
+.topbar-nav { display: flex; align-items: center; gap: 6px; margin-inline-end: auto; margin-inline-start: 26px; }
+.topbar-nav a {
+  color: rgba(255,255,255,0.78); font-weight: 700; font-size: 16px;
+  padding: 9px 14px; border-radius: 9px; transition: color .15s, background .15s; position: relative;
+}
+.topbar-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.menu-toggle {
+  display: none; align-items: center; gap: 9px; cursor: pointer;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+  color: #fff; font-weight: 700; font-size: 15px; padding: 9px 14px; border-radius: 11px; font-family: inherit;
+}
+.menu-toggle .bars { display: inline-flex; flex-direction: column; gap: 4px; }
+.menu-toggle .bars span { display: block; width: 19px; height: 2.2px; background: #fff; border-radius: 2px; transition: transform .25s ease, opacity .2s ease; }
+.menu-toggle[aria-expanded="true"] .bars span:nth-child(1) { transform: translateY(6.2px) rotate(45deg); }
+.menu-toggle[aria-expanded="true"] .bars span:nth-child(2) { opacity: 0; }
+.menu-toggle[aria-expanded="true"] .bars span:nth-child(3) { transform: translateY(-6.2px) rotate(-45deg); }
+
+.menu-panel {
+  position: absolute; top: calc(100% + 8px); right: 16px; left: 16px; z-index: 70;
+  background: rgba(8, 40, 32, 0.98); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 10px;
+  box-shadow: 0 30px 60px -24px rgba(0,0,0,0.7);
+  display: none; flex-direction: column; gap: 2px;
+}
+.menu-panel.open { display: flex; animation: menuIn .22s ease; }
+@keyframes menuIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.menu-panel a {
+  display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.85);
+  font-weight: 700; font-size: 18px; padding: 14px 16px; border-radius: 11px; transition: background .15s, color .15s;
+}
+.menu-panel a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.menu-panel .mp-ic { color: var(--gold); font-size: 9px; }
+.menu-panel .mp-call {
+  margin-top: 6px; justify-content: center; background: var(--orange); color: #fff; font-size: 18px; direction: ltr;
+}
+.menu-panel .mp-call:hover { background: var(--orange-deep); color: #fff; }
+.menu-panel .mp-call svg { width: 20px; height: 20px; }
+
+/* anchor offset for sticky header */
+#top, #benefits, #how, #apply { scroll-margin-top: 80px; }
+.brand { display: flex; align-items: center; gap: 11px; color: #fff; }
+.brand-logo { display: block; background: #fff; border-radius: 12px; padding: 7px 12px; box-shadow: 0 6px 18px -10px rgba(0,0,0,0.5); }
+.brand-logo img { height: 38px; width: auto; display: block; }
+.topbar-call {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--orange); color: #fff; font-weight: 800; font-size: 16px;
+  padding: 11px 18px; border-radius: 999px;
+  box-shadow: 0 10px 24px -10px rgba(255,106,19,0.8);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.topbar-call:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -10px rgba(255,106,19,0.9); }
+.topbar-call svg { width: 19px; height: 19px; }
+.topbar-call .num { direction: ltr; font-variant-numeric: tabular-nums; }
+
+/* ---------- hero ---------- */
+.hero {
+  position: relative;
+  background:
+    radial-gradient(1100px 520px at 88% -10%, rgba(246,185,22,0.16), transparent 60%),
+    radial-gradient(900px 600px at 0% 110%, rgba(37,211,102,0.14), transparent 55%),
+    linear-gradient(165deg, var(--ink-2) 0%, var(--ink) 55%, #04190f 100%);
+  color: #fff;
+  overflow: hidden;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 26px 26px; opacity: 0.5;
+}
+.hero .wrap {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 50px; align-items: center;
+  padding-top: 72px; padding-bottom: 88px;
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: rgba(37,211,102,0.14); border: 1px solid rgba(37,211,102,0.35);
+  color: #aef5c9; font-weight: 700; font-size: 15px;
+  padding: 8px 15px; border-radius: 999px; margin-bottom: 22px;
+}
+.eyebrow .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--wa); box-shadow: 0 0 0 4px rgba(37,211,102,0.25); animation: pulse 1.8s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.6; } }
+.hero h1 {
+  font-size: clamp(38px, 5.4vw, 64px); line-height: 1.04; font-weight: 800;
+  letter-spacing: -0.02em; text-wrap: balance; margin-bottom: 20px;
+}
+.hero h1 .hl { color: var(--gold); }
+.hero .sub { font-size: clamp(19px, 2.3vw, 25px); font-weight: 500; color: rgba(255,255,255,0.82); max-width: 30ch; margin-bottom: 34px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 11px;
+  font-weight: 800; font-size: 19px; padding: 17px 26px; border-radius: 15px;
+  border: none; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  font-family: inherit;
+}
+.btn svg { width: 23px; height: 23px; flex: none; }
+.btn-call { background: var(--orange); color: #fff; box-shadow: 0 16px 38px -14px rgba(255,106,19,0.85); }
+.btn-call:hover { transform: translateY(-3px); box-shadow: 0 22px 46px -14px rgba(255,106,19,0.95); }
+.btn-wa { background: var(--wa); color: #06281a; box-shadow: 0 16px 38px -14px rgba(37,211,102,0.7); }
+.btn-wa:hover { transform: translateY(-3px); box-shadow: 0 22px 46px -14px rgba(37,211,102,0.85); }
+.hero-trust { display: flex; flex-wrap: wrap; gap: 18px 24px; font-size: 15px; color: rgba(255,255,255,0.72); font-weight: 600; }
+.hero-trust span { display: inline-flex; align-items: center; gap: 8px; }
+.hero-trust svg { width: 18px; height: 18px; color: var(--wa); }
+
+.hero-visual { position: relative; }
+.cash-card {
+  border-radius: 26px; overflow: hidden; box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255,255,255,0.12); transform: rotate(-2.5deg);
+  aspect-ratio: 4 / 3.1; background: linear-gradient(160deg, #0f6b52, #07382c);
+  display: flex; align-items: center; justify-content: center;
+}
+.cash-card img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.cash-card .ph { width: 100%; height: 100%; }
+.badge-float {
+  position: absolute; bottom: -22px; left: -18px;
+  background: #fff; color: var(--text); border-radius: 18px; padding: 15px 19px;
+  box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 13px;
+  transform: rotate(2deg);
+}
+.badge-float .big { font-size: 30px; font-weight: 800; color: var(--emerald); line-height: 1; }
+.badge-float .lbl { font-size: 13.5px; color: var(--muted); font-weight: 600; }
+.badge-coin { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(155deg, var(--gold), var(--orange)); display: grid; place-items: center; color: #2a1400; font-weight: 800; font-size: 24px; flex: none; }
+
+/* ---------- benefits ---------- */
+.section { padding: 78px 0; }
+.section-head { text-align: center; max-width: 720px; margin: 0 auto 46px; }
+.kicker { color: var(--orange-deep); font-weight: 800; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+.section-head h2 { font-size: clamp(30px, 4vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; color: var(--ink); text-wrap: balance; }
+.benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.benefit {
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 24px 22px; display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 4px 18px -14px rgba(4,30,22,0.4);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.benefit:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(14,92,71,0.35); }
+.benefit .check {
+  width: 46px; height: 46px; border-radius: 13px; flex: none;
+  background: linear-gradient(155deg, rgba(37,211,102,0.18), rgba(14,92,71,0.16));
+  display: grid; place-items: center; color: var(--emerald);
+}
+.benefit .check svg { width: 25px; height: 25px; }
+.benefit p { font-size: 20px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.benefits-cta { text-align: center; margin-top: 40px; }
+.benefits-cta .line { font-size: clamp(22px, 3vw, 30px); font-weight: 800; color: var(--ink); margin-bottom: 20px; }
+
+/* ---------- how it works ---------- */
+.how { background: linear-gradient(165deg, var(--ink-2), var(--ink)); color: #fff; }
+.how .section-head h2 { color: #fff; }
+.how .kicker { color: var(--gold); }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.step {
+  position: relative; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--r); padding: 34px 26px 30px; text-align: center;
+}
+.step .n {
+  width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 18px;
+  background: linear-gradient(155deg, var(--gold), var(--orange));
+  display: grid; place-items: center; color: #2a1400; font-weight: 800; font-size: 26px;
+  box-shadow: 0 12px 26px -10px rgba(246,185,22,0.6);
+}
+.step h3 { font-size: 23px; font-weight: 800; margin-bottom: 10px; }
+.step p { font-size: 17px; color: rgba(255,255,255,0.74); font-weight: 500; }
+
+/* ---------- lead form ---------- */
+.form-section { background: var(--paper); }
+.form-card {
+  max-width: 980px; margin: 0 auto; background: var(--white);
+  border-radius: 28px; box-shadow: var(--shadow-lg); overflow: hidden;
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+}
+.form-aside {
+  background: linear-gradient(165deg, var(--emerald), var(--emerald-deep)); color: #fff;
+  padding: 44px 38px; display: flex; flex-direction: column; justify-content: center;
+}
+.form-aside h2 { font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 14px; text-wrap: balance; }
+.form-aside p { font-size: 18px; color: rgba(255,255,255,0.82); margin-bottom: 26px; }
+.form-aside ul { list-style: none; display: grid; gap: 13px; }
+.form-aside li { display: flex; align-items: center; gap: 11px; font-size: 17px; font-weight: 600; }
+.form-aside li svg { width: 20px; height: 20px; color: var(--gold); flex: none; }
+.form-body { padding: 44px 38px; display: flex; flex-direction: column; justify-content: center; }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.field input {
+  width: 100%; font-family: inherit; font-size: 18px; font-weight: 500;
+  padding: 15px 17px; border: 2px solid var(--line); border-radius: 13px;
+  background: #fbfbf8; color: var(--text); transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(14,92,71,0.12); }
+.field input::placeholder { color: #9aa6a1; }
+.btn-submit {
+  width: 100%; background: var(--orange); color: #fff; font-weight: 800; font-size: 20px;
+  padding: 17px; border: none; border-radius: 13px; cursor: pointer; font-family: inherit;
+  box-shadow: 0 16px 34px -14px rgba(255,106,19,0.8); transition: transform .15s ease, box-shadow .15s ease;
+  margin-top: 6px;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 22px 42px -14px rgba(255,106,19,0.9); }
+.form-note { font-size: 13.5px; color: var(--muted); text-align: center; margin-top: 14px; }
+.form-success { display: none; text-align: center; padding: 22px 0; }
+.form-success.show { display: block; animation: pop .4s ease; }
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.form-success .ok { width: 72px; height: 72px; border-radius: 50%; background: rgba(37,211,102,0.16); color: var(--wa-deep); display: grid; place-items: center; margin: 0 auto 16px; }
+.form-success .ok svg { width: 40px; height: 40px; }
+.form-success h3 { font-size: 26px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.form-success p { font-size: 17px; color: var(--muted); }
+
+/* ---------- final CTA ---------- */
+.final {
+  text-align: center;
+  background:
+    radial-gradient(700px 320px at 50% 0%, rgba(246,185,22,0.18), transparent 60%),
+    linear-gradient(160deg, var(--orange), var(--orange-deep));
+  color: #fff; padding: 72px 0;
+}
+.final h2 { font-size: clamp(30px, 4.4vw, 50px); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 14px; text-wrap: balance; }
+.final p { font-size: 20px; color: rgba(255,255,255,0.9); margin-bottom: 30px; }
+.btn-final {
+  display: inline-flex; align-items: center; gap: 12px; background: #fff; color: var(--orange-deep);
+  font-weight: 800; font-size: 24px; padding: 19px 34px; border-radius: 16px;
+  box-shadow: 0 22px 50px -18px rgba(0,0,0,0.5); transition: transform .15s ease;
+}
+.btn-final:hover { transform: translateY(-3px) scale(1.02); }
+.btn-final svg { width: 27px; height: 27px; }
+.btn-final .num { direction: ltr; font-variant-numeric: tabular-nums; }
+
+/* ---------- footer ---------- */
+.footer { background: var(--ink); color: rgba(255,255,255,0.7); padding: 40px 0; }
+.footer .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; }
+.footer .credit { font-size: 16px; font-weight: 600; }
+.footer .credit a { color: var(--gold); font-weight: 800; }
+.footer .legal { font-size: 13px; color: rgba(255,255,255,0.45); max-width: 56ch; }
+.footer .admin-link { font-size: 13px; color: rgba(255,255,255,0.4); }
+.footer .admin-link:hover { color: rgba(255,255,255,0.7); }
+
+/* ---------- floating whatsapp ---------- */
+.wa-float {
+  position: fixed; bottom: 22px; left: 22px; z-index: 80;
+  width: 62px; height: 62px; border-radius: 50%; background: var(--wa);
+  display: grid; place-items: center; color: #fff;
+  box-shadow: 0 14px 34px -10px rgba(37,211,102,0.8);
+  animation: floaty 2.6s ease-in-out infinite;
+}
+.wa-float svg { width: 34px; height: 34px; }
+.wa-float::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--wa); animation: ring 2.2s ease-out infinite;
+}
+@keyframes ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.wa-float .tip {
+  position: absolute; bottom: 50%; transform: translateY(50%); right: calc(100% + 12px);
+  background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap;
+  padding: 8px 13px; border-radius: 10px; box-shadow: var(--shadow-md); opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.wa-float:hover .tip { opacity: 1; }
+
+/* mobile sticky call bar */
+.mobile-bar { display: none; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .topbar-nav { display: none; }
+  .menu-toggle { display: inline-flex; }
+}
+@media (max-width: 920px) {
+  .hero .wrap { grid-template-columns: 1fr; gap: 40px; padding-top: 54px; padding-bottom: 60px; }
+  .hero-visual { order: -1; max-width: 440px; }
+  .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps { grid-template-columns: 1fr; gap: 14px; }
+  .form-card { grid-template-columns: 1fr; }
+  .form-aside { padding: 36px 30px; }
+}
+@media (max-width: 560px) {
+  .topbar .wrap { height: 60px; }
+  .topbar-call .num { display: none; }
+  .menu-toggle .menu-label { display: none; }
+  .menu-toggle { padding: 10px 12px; }
+  .topbar-call { padding: 10px 14px; }
+  .section { padding: 56px 0; }
+  .benefits-grid { grid-template-columns: 1fr; }
+  .benefit p { font-size: 19px; }
+  .hero h1 { font-size: 34px; }
+  .footer .wrap { flex-direction: column; align-items: flex-start; }
+  .mobile-bar {
+    display: flex; position: fixed; bottom: 0; right: 0; left: 0; z-index: 70;
+    background: rgba(6,35,29,0.96); backdrop-filter: blur(10px); padding: 10px 12px; gap: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .mobile-bar a { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: 17px; padding: 14px; border-radius: 12px; }
+  .mobile-bar .m-call { background: var(--orange); color: #fff; }
+  .mobile-bar .m-wa { background: var(--wa); color: #06281a; }
+  .mobile-bar a svg { width: 20px; height: 20px; }
+  .wa-float { bottom: 78px; }
+  body { padding-bottom: 70px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <span class="brand-logo"><img src="logo.png" alt="הלוואה מהירה לכל מטרה" /></span>
+    </a>
+    <nav class="topbar-nav">
+      <a href="#benefits">היתרונות</a>
+      <a href="#how">איך זה עובד</a>
+      <a href="#apply">השארת פרטים</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="topbar-call" href="tel:033814745">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+        <span class="num">03-3814745</span>
+      </a>
+      <button class="menu-toggle" id="menuToggle" aria-label="פתיחת תפריט" aria-expanded="false" aria-controls="menuPanel">
+        <span class="bars"><span></span><span></span><span></span></span>
+        <span class="menu-label">תפריט</span>
+      </button>
+    </div>
+  </div>
+  <nav class="menu-panel" id="menuPanel" aria-hidden="true">
+    <a href="#top"><span class="mp-ic">●</span> ראשי</a>
+    <a href="#benefits"><span class="mp-ic">●</span> היתרונות שלנו</a>
+    <a href="#how"><span class="mp-ic">●</span> איך זה עובד</a>
+    <a href="#apply"><span class="mp-ic">●</span> השארת פרטים</a>
+    <a class="mp-call" href="tel:033814745">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+      חייגו עכשיו · 03-3814745
+    </a>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-text">
+      <div class="eyebrow"><span class="dot"></span> אישור מיידי בטלפון · ללא בירוקרטיה</div>
+      <h1>זקוק לכסף <span class="hl">מזומן</span> עכשיו?<br />חייג אלינו עוד היום!</h1>
+      <p class="sub">שירות הלוואות מהיר עד בית הלקוח</p>
+      <div class="cta-row">
+        <a class="btn btn-call" href="tel:033814745">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+          חייג עכשיו לאישור מיידי
+        </a>
+        <a class="btn btn-wa" href="https://wa.me/972545896464?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%94%D7%92%D7%A2%D7%AA%D7%99%20%D7%93%D7%A8%D7%9A%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%90%D7%99%D7%A0%D7%98%D7%A8%D7%A0%D7%98%20%D7%A9%D7%9C%D7%9B%D7%9D%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%D7%AA%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%9C%D7%94%D7%9C%D7%95%D7%95%D7%90%D7%94%20%D7%9E%D7%94%D7%99%D7%A8%D7%94" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.04L2 22l5.13-1.35A10 10 0 1 0 12 2zm5.5 14.2c-.23.65-1.36 1.25-1.87 1.3-.5.05-1 .25-3.3-.7-2.78-1.15-4.55-3.97-4.69-4.16-.14-.18-1.12-1.49-1.12-2.84s.71-2.02.96-2.3c.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.23.55.78 1.9.85 2.04.07.14.11.3.02.48-.09.18-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.57.16.27.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.27.14.43.12.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.23.61-.14.25.09 1.6.76 1.87.9.27.14.45.2.52.32.07.11.07.65-.16 1.3z"/></svg>
+          שלח הודעה בוואטסאפ
+        </a>
+      </div>
+      <div class="hero-trust">
+        <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> אישור מיידי</span>
+        <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> ללא עלות מצד הלקוח</span>
+        <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> תשלומים נוחים</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="cash-card">
+        <img src="nis-cash.jpg" alt="שטרות כסף מזומן בשקלים חדשים" loading="eager" style="width:100%;height:100%;object-fit:cover;" />
+        <div class="ph ph-fallback" style="display:none;width:100%;height:100%;position:absolute;inset:0;">
+          <span>תמונת כסף מזומן</span>
+        </div>
+      </div>
+      <div class="badge-float">
+        <div class="badge-coin">₪</div>
+        <div>
+          <div class="big">תוך דקות</div>
+          <div class="lbl">מהשיחה ועד האישור</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BENEFITS ============ -->
+<section class="section" id="benefits">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">למה אנחנו</div>
+      <h2>כל היתרונות, בלי הכאב ראש</h2>
+    </div>
+    <div class="benefits-grid" id="benefitsGrid"></div>
+    <div class="benefits-cta">
+      <div class="line">לאישור מיידי התקשרו עכשיו</div>
+      <a class="btn btn-call" href="tel:033814745" style="display:inline-flex;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+        <span class="num" style="direction:ltr;">03-3814745</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section how" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">פשוט ומהיר</div>
+      <h2>איך זה עובד?</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h3>מתקשרים או משאירים פרטים</h3>
+        <p>חייגו אלינו או מלאו טופס קצר באתר — לוקח פחות מדקה.</p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h3>מקבלים אישור מיידי</h3>
+        <p>נציג חוזר אליכם תוך דקות עם אישור והתנאים — ללא בירוקרטיה.</p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h3>הכסף עד הבית</h3>
+        <p>שירות מהיר עד דלת ביתכם, עם תשלומים נוחים והחזר בצ׳קים.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LEAD FORM ============ -->
+<section class="section form-section" id="apply">
+  <div class="wrap">
+    <div class="form-card">
+      <div class="form-aside">
+        <h2>השאירו פרטים ונחזור אליכם מיד</h2>
+        <p>מילוי מהיר, ללא התחייבות. אישור בטלפון תוך דקות.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> ללא בירוקרטיה מיותרת</li>
+          <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> ללא עלות מצד הלקוח</li>
+          <li><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg> שירות מהיר עד הבית</li>
+        </ul>
+      </div>
+      <div class="form-body">
+        <form id="leadForm" novalidate>
+          <div class="field">
+            <label for="leadName">שם מלא</label>
+            <input id="leadName" name="name" type="text" placeholder="לדוגמה: ישראל ישראלי" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="leadPhone">מספר טלפון</label>
+            <input id="leadPhone" name="phone" type="tel" inputmode="tel" placeholder="050-0000000" autocomplete="tel" required />
+          </div>
+          <button class="btn-submit" type="submit">קבל אישור מיידי</button>
+          <div class="form-note">בלחיצה על הכפתור אני מאשר/ת שניצור קשר טלפוני או בוואטסאפ.</div>
+        </form>
+        <div class="form-success" id="formSuccess">
+          <div class="ok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg></div>
+          <h3>הפרטים התקבלו!</h3>
+          <p>תודה, ניצור איתך קשר תוך דקות. אפשר גם להתקשר ישירות: <a href="tel:033814745" style="color:var(--emerald);font-weight:800;direction:ltr;display:inline-block;">03-3814745</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap">
+    <h2>אל תחכו — הכסף במרחק שיחה אחת</h2>
+    <p>זמינים עבורכם עכשיו לאישור מיידי</p>
+    <a class="btn-final" href="tel:033814745">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+      <span class="num">03-3814745</span>
+    </a>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div>
+      <div class="credit">האתר מתופעל ומקודם ע״י <a href="#" target="_blank" rel="noopener">Berale</a></div>
+      <div class="legal">מתן הלוואות כפוף לאישור ולתנאי החברה. אי עמידה בפירעון ההלוואה עלולה לגרור חיוב בריבית פיגורים והליכי גבייה.</div>
+    </div>
+    <a class="admin-link" href="dashboard.html">כניסת מנהלים ←</a>
+  </div>
+</footer>
+
+<!-- ============ FLOATING WHATSAPP ============ -->
+<a class="wa-float" href="https://wa.me/972545896464?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%94%D7%92%D7%A2%D7%AA%D7%99%20%D7%93%D7%A8%D7%9A%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%90%D7%99%D7%A0%D7%98%D7%A8%D7%A0%D7%98%20%D7%A9%D7%9C%D7%9B%D7%9D%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%D7%AA%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%9C%D7%94%D7%9C%D7%95%D7%95%D7%90%D7%94%20%D7%9E%D7%94%D7%99%D7%A8%D7%94" target="_blank" rel="noopener" aria-label="וואטסאפ">
+  <span class="tip">דברו איתנו בוואטסאפ</span>
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.04L2 22l5.13-1.35A10 10 0 1 0 12 2zm5.5 14.2c-.23.65-1.36 1.25-1.87 1.3-.5.05-1 .25-3.3-.7-2.78-1.15-4.55-3.97-4.69-4.16-.14-.18-1.12-1.49-1.12-2.84s.71-2.02.96-2.3c.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.23.55.78 1.9.85 2.04.07.14.11.3.02.48-.09.18-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.57.16.27.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.27.14.43.12.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.23.61-.14.25.09 1.6.76 1.87.9.27.14.45.2.52.32.07.11.07.65-.16 1.3z"/></svg>
+</a>
+
+<!-- ============ MOBILE STICKY BAR ============ -->
+<div class="mobile-bar">
+  <a class="m-call" href="tel:033814745">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+    חייג עכשיו
+  </a>
+  <a class="m-wa" href="https://wa.me/972545896464?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%9C%D7%94%D7%9C%D7%95%D7%95%D7%90%D7%94" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.04L2 22l5.13-1.35A10 10 0 1 0 12 2zm5.5 14.2c-.23.65-1.36 1.25-1.87 1.3-.5.05-1 .25-3.3-.7-2.78-1.15-4.55-3.97-4.69-4.16-.14-.18-1.12-1.49-1.12-2.84s.71-2.02.96-2.3c.25-.27.55-.34.73-.34.18 0 .37 0 .53.01.17.01.4-.06.62.48.23.55.78 1.9.85 2.04.07.14.11.3.02.48-.09.18-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.57.16.27.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.21 1.37.27.14.43.12.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.23.61-.14.25.09 1.6.76 1.87.9.27.14.45.2.52.32.07.11.07.65-.16 1.3z"/></svg>
+    וואטסאפ
+  </a>
+</div>
+
+<script>
+(function () {
+  // Render benefits
+  var benefits = [
+    'הלוואה מהירה',
+    'אישור מיידי',
+    'ללא בירוקרטיה',
+    'החזר בצ׳קים בלבד',
+    'ללא עלות מצד הלקוח',
+    'תשלומים נוחים ומשתלמים',
+    'שירות מהיר עד בית הלקוח'
+  ];
+  var checkSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6 12-12-1.4-1.4z"/></svg>';
+  var grid = document.getElementById('benefitsGrid');
+  grid.innerHTML = benefits.map(function (b) {
+    return '<div class="benefit"><div class="check">' + checkSvg + '</div><p>' + b + '</p></div>';
+  }).join('');
+
+  // Mobile menu toggle
+  var menuToggle = document.getElementById('menuToggle');
+  var menuPanel = document.getElementById('menuPanel');
+  function setMenu(open) {
+    menuPanel.classList.toggle('open', open);
+    menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+  menuToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setMenu(!menuPanel.classList.contains('open'));
+  });
+  menuPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () { setMenu(false); });
+  });
+  document.addEventListener('click', function (e) {
+    if (menuPanel.classList.contains('open') && !menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
+      setMenu(false);
+    }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+
+  // Lead form -> localStorage (shared with dashboard)
+  var STORE_KEY = 'pivo_leads_v1';
+  function loadLeads() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function saveLeads(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
+
+  var form = document.getElementById('leadForm');
+  var success = document.getElementById('formSuccess');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = form.name.value.trim();
+    var phone = form.phone.value.trim();
+    if (!name) { form.name.focus(); form.name.style.borderColor = '#e34935'; return; }
+    if (!phone || phone.replace(/\D/g, '').length < 7) { form.phone.focus(); form.phone.style.borderColor = '#e34935'; return; }
+
+    var leads = loadLeads();
+    leads.unshift({
+      id: 'L' + Date.now(),
+      createdAt: new Date().toISOString(),
+      name: name,
+      phone: phone,
+      status: 'pending',
+      notes: ''
+    });
+    saveLeads(leads);
+
+    form.style.display = 'none';
+    success.classList.add('show');
+  });
+})();
+</script>
+
+</body>
+</html>
