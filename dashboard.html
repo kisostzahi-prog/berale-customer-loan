@@ -204,30 +204,31 @@ tbody tr:hover { background: #fafbf8; }
 
 <script>
 (function () {
-  var STORE_KEY = 'pivo_leads_v1';
-  var AUTH_KEY = 'pivo_admin_auth';
-  var PASSWORD = 'berale2025';
+  var AUTH_KEY = 'pivo_admin_pass';
+  var ADMIN_PASS = null;
 
   var STATUS = {
-    pending:  { label: 'ממתין',  cls: 'pending',  dot: 'var(--pending-dot)',  fg: 'var(--pending-fg)' },
-    progress: { label: 'בטיפול', cls: 'progress', dot: 'var(--progress-dot)', fg: 'var(--progress-fg)' },
-    done:     { label: 'טופל',   cls: 'done',     dot: 'var(--done-dot)',     fg: 'var(--done-fg)' }
+    pending:  { label: 'ממתין',  cls: 'pending',  dot: 'var(--pending-dot)' },
+    progress: { label: 'בטיפול', cls: 'progress', dot: 'var(--progress-dot)' },
+    done:     { label: 'טופל',   cls: 'done',     dot: 'var(--done-dot)' }
   };
-
   var state = { filter: 'all', search: '' };
 
-  // ---------- storage ----------
-  function loadLeads() {
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
-    catch (e) { return []; }
+  // ---------- API ----------
+  function api(method, path, body) {
+    return fetch(path, {
+      method: method,
+      headers: { 'Authorization': 'Bearer ' + ADMIN_PASS, 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      if (r.status === 401) { logout(); throw new Error('401'); }
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
   }
-  function saveLeads(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
-  function updateLead(id, patch) {
-    var leads = loadLeads();
-    var i = leads.findIndex(function (l) { return l.id === id; });
-    if (i > -1) { Object.assign(leads[i], patch); saveLeads(leads); }
-  }
-  function deleteLead(id) { saveLeads(loadLeads().filter(function (l) { return l.id !== id; })); }
+  function loadLeads()        { return api('GET', '/api/leads'); }
+  function updateLead(id, p)  { return api('PATCH', '/api/leads/' + id, p); }
+  function deleteLead(id)     { return api('DELETE', '/api/leads/' + id); }
 
   // ---------- helpers ----------
   function fmtDate(iso) {
@@ -239,56 +240,39 @@ tbody tr:hover { background: #fafbf8; }
   }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
-  function seedDemo() {
-    var now = Date.now();
-    var demo = [
-      { id: 'L' + (now - 600000),  createdAt: new Date(now - 600000).toISOString(),  name: 'דנה כהן',     phone: '052-7788123', status: 'pending',  notes: '' },
-      { id: 'L' + (now - 3600000), createdAt: new Date(now - 3600000).toISOString(), name: 'משה לוי',      phone: '054-3321987', status: 'progress', notes: 'ביקש הלוואה של 8,000 ₪, לחזור אחרי 16:00.' },
-      { id: 'L' + (now - 9000000), createdAt: new Date(now - 9000000).toISOString(), name: 'יוסי אברהם',   phone: '050-9912345', status: 'done',     notes: 'אושר, החזר ב-3 צ׳קים. נסגר.' },
-      { id: 'L' + (now - 200000),  createdAt: new Date(now - 200000).toISOString(),  name: 'רונית מזרחי',  phone: '053-4567890', status: 'pending',  notes: '' }
-    ];
-    saveLeads(demo);
-  }
-
   // ---------- render ----------
   function render() {
-    var leads = loadLeads();
-    renderStats(leads);
-    renderFilters(leads);
-
-    var filtered = leads.filter(function (l) {
-      if (state.filter !== 'all' && l.status !== state.filter) return false;
-      if (state.search) {
-        var q = state.search.toLowerCase();
-        return (l.name || '').toLowerCase().indexOf(q) > -1 ||
-               (l.phone || '').replace(/\D/g, '').indexOf(q.replace(/\D/g, '')) > -1 && q.replace(/\D/g,'').length > 0;
-      }
-      return true;
-    });
-
     var card = document.getElementById('tableCard');
-    if (leads.length === 0) {
-      card.innerHTML = emptyState(true);
-      var seed = card.querySelector('.seed');
-      if (seed) seed.addEventListener('click', function () { seedDemo(); render(); });
-      return;
-    }
-    if (filtered.length === 0) { card.innerHTML = emptyState(false); return; }
-
-    var rows = filtered.map(rowHtml).join('');
-    card.innerHTML =
-      '<table><thead><tr>' +
-        '<th>מזהה</th><th>תאריך ושעה</th><th>שם הלקוח</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th></th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
-
-    bindRows(card);
+    card.innerHTML = '<div class="empty"><p>טוען...</p></div>';
+    loadLeads().then(function (leads) {
+      renderStats(leads);
+      renderFilters(leads);
+      var filtered = leads.filter(function (l) {
+        if (state.filter !== 'all' && l.status !== state.filter) return false;
+        if (state.search) {
+          var q = state.search.toLowerCase();
+          return (l.name || '').toLowerCase().indexOf(q) > -1 ||
+                 (l.phone || '').replace(/\D/g,'').indexOf(q.replace(/\D/g,'')) > -1 && q.replace(/\D/g,'').length > 0;
+        }
+        return true;
+      });
+      if (leads.length === 0) { card.innerHTML = emptyState(true); return; }
+      if (filtered.length === 0) { card.innerHTML = emptyState(false); return; }
+      card.innerHTML =
+        '<table><thead><tr>' +
+          '<th>מזהה</th><th>תאריך ושעה</th><th>שם הלקוח</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th></th>' +
+        '</tr></thead><tbody>' + filtered.map(rowHtml).join('') + '</tbody></table>';
+      bindRows(card, leads);
+    }).catch(function () {
+      card.innerHTML = '<div class="empty"><h3>שגיאה בטעינת הנתונים</h3><p>בדוק חיבור לאינטרנט ונסה שוב.</p></div>';
+    });
   }
 
   function rowHtml(l) {
     var st = STATUS[l.status] || STATUS.pending;
     var phoneDigits = (l.phone || '').replace(/[^\d+]/g, '');
     return '<tr data-id="' + l.id + '">' +
-      '<td class="cell-id">' + esc(l.id.replace('L', '#')) + '</td>' +
+      '<td class="cell-id">' + esc(l.id.replace('L','#')) + '</td>' +
       '<td class="cell-date">' + fmtDate(l.createdAt) + '</td>' +
       '<td class="cell-name">' + esc(l.name) + '</td>' +
       '<td class="cell-phone"><a href="tel:' + esc(phoneDigits) + '">' +
@@ -303,23 +287,22 @@ tbody tr:hover { background: #fafbf8; }
         '<div class="notes-saved" data-role="saved">נשמר ✓</div></td>' +
       '<td><button class="row-del" data-role="del" title="מחיקה">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>' +
-      '</button></td>' +
-    '</tr>';
+      '</button></td></tr>';
   }
 
-  function bindRows(card) {
+  function bindRows(card, leads) {
     card.querySelectorAll('tr[data-id]').forEach(function (tr) {
       var id = tr.getAttribute('data-id');
+
       var sel = tr.querySelector('[data-role="status"]');
       sel.addEventListener('change', function () {
         sel.className = 'status-select ' + (STATUS[sel.value] || STATUS.pending).cls;
-        updateLead(id, { status: sel.value });
-        renderStats(loadLeads());
-        renderFilters(loadLeads());
-        if (state.filter !== 'all' && sel.value !== state.filter) {
-          tr.style.transition = 'opacity .3s'; tr.style.opacity = '0';
-          setTimeout(render, 300);
-        }
+        updateLead(id, { status: sel.value }).then(function () {
+          if (state.filter !== 'all' && sel.value !== state.filter) {
+            tr.style.transition = 'opacity .3s'; tr.style.opacity = '0';
+            setTimeout(render, 300);
+          } else { render(); }
+        });
       });
 
       var ta = tr.querySelector('[data-role="notes"]');
@@ -328,15 +311,16 @@ tbody tr:hover { background: #fafbf8; }
       ta.addEventListener('input', function () {
         clearTimeout(t);
         t = setTimeout(function () {
-          updateLead(id, { notes: ta.value });
-          saved.classList.add('show');
-          setTimeout(function () { saved.classList.remove('show'); }, 1400);
-        }, 500);
+          updateLead(id, { notes: ta.value }).then(function () {
+            saved.classList.add('show');
+            setTimeout(function () { saved.classList.remove('show'); }, 1400);
+          });
+        }, 600);
       });
 
       tr.querySelector('[data-role="del"]').addEventListener('click', function () {
-        if (confirm('למחוק את הליד של ' + (tr.querySelector('.cell-name').textContent) + '?')) {
-          deleteLead(id); render();
+        if (confirm('למחוק את הליד של ' + tr.querySelector('.cell-name').textContent + '?')) {
+          deleteLead(id).then(render);
         }
       });
     });
@@ -345,44 +329,36 @@ tbody tr:hover { background: #fafbf8; }
   function renderStats(leads) {
     var counts = { pending: 0, progress: 0, done: 0 };
     leads.forEach(function (l) { if (counts[l.status] != null) counts[l.status]++; });
-    var html =
+    document.getElementById('stats').innerHTML =
       stat(leads.length, 'סה״כ לידים', null) +
-      stat(counts.pending, STATUS.pending.label, STATUS.pending.dot) +
+      stat(counts.pending,  STATUS.pending.label,  STATUS.pending.dot) +
       stat(counts.progress, STATUS.progress.label, STATUS.progress.dot) +
-      stat(counts.done, STATUS.done.label, STATUS.done.dot);
-    document.getElementById('stats').innerHTML = html;
+      stat(counts.done,     STATUS.done.label,     STATUS.done.dot);
   }
   function stat(v, l, dot) {
-    var d = dot ? '<span class="d" style="background:' + dot + '"></span>' : '';
-    return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + d + l + '</div></div>';
+    return '<div class="stat"><div class="v">' + v + '</div><div class="l">' +
+      (dot ? '<span class="d" style="background:' + dot + '"></span>' : '') + l + '</div></div>';
   }
 
   function renderFilters(leads) {
     var counts = { all: leads.length, pending: 0, progress: 0, done: 0 };
     leads.forEach(function (l) { if (counts[l.status] != null) counts[l.status]++; });
-    var defs = [
-      { k: 'all', label: 'הכל' },
-      { k: 'pending', label: STATUS.pending.label },
-      { k: 'progress', label: STATUS.progress.label },
-      { k: 'done', label: STATUS.done.label }
-    ];
-    document.getElementById('filters').innerHTML = defs.map(function (d) {
-      return '<button class="filter-btn ' + (state.filter === d.k ? 'active' : '') + '" data-filter="' + d.k + '">' +
-        d.label + ' <span class="count">' + counts[d.k] + '</span></button>';
-    }).join('');
+    document.getElementById('filters').innerHTML =
+      [{ k:'all', label:'הכל' }, { k:'pending', label:STATUS.pending.label },
+       { k:'progress', label:STATUS.progress.label }, { k:'done', label:STATUS.done.label }]
+      .map(function (d) {
+        return '<button class="filter-btn ' + (state.filter === d.k ? 'active' : '') + '" data-filter="' + d.k + '">' +
+          d.label + ' <span class="count">' + counts[d.k] + '</span></button>';
+      }).join('');
     document.querySelectorAll('[data-filter]').forEach(function (b) {
       b.addEventListener('click', function () { state.filter = b.getAttribute('data-filter'); render(); });
     });
   }
 
   function emptyState(noLeads) {
-    if (noLeads) {
-      return '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
-        '<h3>אין עדיין לידים</h3><p>לידים שיישלחו מטופס דף הנחיתה יופיעו כאן באופן מיידי.</p>' +
-        '<button class="seed">טען נתוני הדגמה</button></div>';
-    }
-    return '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>' +
-      '<h3>לא נמצאו תוצאות</h3><p>נסו לשנות את הסינון או החיפוש.</p></div>';
+    return noLeads
+      ? '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><h3>אין עדיין לידים</h3><p>לידים שיישלחו מטופס דף הנחיתה יופיעו כאן.</p></div>'
+      : '<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>לא נמצאו תוצאות</h3><p>נסו לשנות את הסינון או החיפוש.</p></div>';
   }
 
   // ---------- search ----------
@@ -390,35 +366,45 @@ tbody tr:hover { background: #fafbf8; }
     state.search = e.target.value.trim(); render();
   });
 
-  // live sync if a lead is submitted in another tab
-  window.addEventListener('storage', function (e) { if (e.key === STORE_KEY) render(); });
-
   // ---------- auth ----------
   var gate = document.getElementById('gate');
-  var app = document.getElementById('app');
-  function showApp() { gate.style.display = 'none'; app.classList.add('show'); render(); }
+  var app  = document.getElementById('app');
 
-  if (sessionStorage.getItem(AUTH_KEY) === '1') { showApp(); }
+  function showApp(pass) {
+    ADMIN_PASS = pass;
+    sessionStorage.setItem(AUTH_KEY, pass);
+    gate.style.display = 'none';
+    app.classList.add('show');
+    render();
+  }
 
-  document.getElementById('gateForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var pass = document.getElementById('gatePass').value;
-    if (pass === PASSWORD) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      showApp();
-    } else {
-      document.getElementById('gateErr').textContent = 'סיסמה שגויה, נסו שוב.';
-      document.getElementById('gatePass').value = '';
-    }
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', function () {
+  function logout() {
+    ADMIN_PASS = null;
     sessionStorage.removeItem(AUTH_KEY);
     app.classList.remove('show');
     gate.style.display = 'grid';
     document.getElementById('gatePass').value = '';
     document.getElementById('gateErr').textContent = '';
+  }
+
+  var saved = sessionStorage.getItem(AUTH_KEY);
+  if (saved) showApp(saved);
+
+  document.getElementById('gateForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pass = document.getElementById('gatePass').value;
+    var btn = this.querySelector('button');
+    btn.disabled = true; btn.textContent = 'מתחבר...';
+    fetch('/api/leads', { headers: { 'Authorization': 'Bearer ' + pass } })
+      .then(function (r) {
+        if (r.ok) { showApp(pass); }
+        else { document.getElementById('gateErr').textContent = 'סיסמה שגויה, נסו שוב.'; document.getElementById('gatePass').value = ''; }
+      })
+      .catch(function () { document.getElementById('gateErr').textContent = 'שגיאת חיבור, נסו שוב.'; })
+      .finally(function () { btn.disabled = false; btn.textContent = 'כניסה למערכת'; });
   });
+
+  document.getElementById('logoutBtn').addEventListener('click', logout);
 })();
 </script>
 

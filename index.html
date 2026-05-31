@@ -606,14 +606,7 @@ img { display: block; max-width: 100%; }
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
 
-  // Lead form -> localStorage (shared with dashboard)
-  var STORE_KEY = 'pivo_leads_v1';
-  function loadLeads() {
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
-    catch (e) { return []; }
-  }
-  function saveLeads(arr) { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
-
+  // Lead form -> API
   var form = document.getElementById('leadForm');
   var success = document.getElementById('formSuccess');
   form.addEventListener('submit', function (e) {
@@ -623,19 +616,25 @@ img { display: block; max-width: 100%; }
     if (!name) { form.name.focus(); form.name.style.borderColor = '#e34935'; return; }
     if (!phone || phone.replace(/\D/g, '').length < 7) { form.phone.focus(); form.phone.style.borderColor = '#e34935'; return; }
 
-    var leads = loadLeads();
-    leads.unshift({
-      id: 'L' + Date.now(),
-      createdAt: new Date().toISOString(),
-      name: name,
-      phone: phone,
-      status: 'pending',
-      notes: ''
-    });
-    saveLeads(leads);
+    var btn = form.querySelector('.btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'שולח...';
 
-    form.style.display = 'none';
-    success.classList.add('show');
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'L' + Date.now(), name: name, phone: phone })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function () {
+      form.style.display = 'none';
+      success.classList.add('show');
+    })
+    .catch(function () {
+      btn.disabled = false;
+      btn.textContent = 'קבל אישור מיידי';
+      alert('שגיאה בשליחה — נסה שוב');
+    });
   });
 })();
 </script>
